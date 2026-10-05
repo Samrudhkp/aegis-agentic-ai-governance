@@ -1,0 +1,67 @@
+# Cloud Build pipeline: evaluate -> gate -> deploy to Cloud Run
+# Deployments are blocked when Aegis quality/safety gates fail.
+
+substitutions:
+  _SERVICE: aegis-eval-api
+  _REGION: us-central1
+  _IMAGE: aegis-eval-api
+
+steps:
+  # Install and run unit + integration tests
+  - name: python:3.12-slim
+    id: test
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        pip install -e ".[dev]"
+        pytest -q
+
+  # Run smoke + adversarial evaluation gates (fail-closed)
+  - name: python:3.12-slim
+    id: aegis-gate
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        pip install -e .
+        export AEGIS_MODE=local
+        python -m aegis.cicd.gate_check --dataset smoke --adversarial --fail-closed
+
+  # Build container only if gates passed
+  - name: gcr.io/cloud-builders/docker
+    id: build
+    waitFor: ["aegis-gate"]
+    args:
+      - build
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/aegis/${_IMAGE}:$SHORT_SHA
+      - .
+
+  - name: gcr.io/cloud-builders/docker
+    id: push
+    waitFor: ["build"]
+    args:
+      - push
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/aegis/${_IMAGE}:$SHORT_SHA
+
+  # Deploy to Cloud Run — only reached when gate-check exited 0
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    id: deploy
+    waitFor: ["push"]
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - ${_SERVICE}
+      - --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/aegis/${_IMAGE}:$SHORT_SHA
+      - --region=${_REGION}
+      - --platform=managed
+      - --allow-unauthenticated
+      - --set-env-vars=AEGIS_MODE=gcp,AEGIS_PROJECT_ID=$PROJECT_ID
+
+images:
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/aegis/${_IMAGE}:$SHORT_SHA
+
+options:
+  logging: CLOUD_LOGGING_ONLY
