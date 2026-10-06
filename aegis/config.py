@@ -24,8 +24,8 @@ class Settings(BaseSettings):
 
     project_id: str = Field(default="aegis-eval-governance-platform")
     location: str = Field(default="us-central1")
-    model: str = Field(default="gemini-2.0-flash")
-    judge_model: str = Field(default="gemini-2.0-flash")
+    model: str = Field(default="gemini-2.5-flash")
+    judge_model: str = Field(default="gemini-2.5-flash")
 
     # Offline/local mode skips live Gemini/GCP calls and uses deterministic stubs.
     # Set AEGIS_MODE=gcp once billing is enabled on the GCP project.

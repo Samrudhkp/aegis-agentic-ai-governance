@@ -88,7 +88,7 @@ gcloud run deploy "${SERVICE}" \
   --region="${REGION}" \
   --platform=managed \
   --allow-unauthenticated \
-  --set-env-vars="AEGIS_MODE=gcp,AEGIS_PROJECT_ID=${PROJECT},AEGIS_LOCATION=${REGION},AEGIS_BIGQUERY_DATASET=aegis_evals,AEGIS_BIGQUERY_TABLE=evaluation_runs"
+  --set-env-vars="AEGIS_MODE=gcp,AEGIS_PROJECT_ID=${PROJECT},AEGIS_LOCATION=${REGION},AEGIS_MODEL=gemini-2.5-flash,AEGIS_JUDGE_MODEL=gemini-2.5-flash,AEGIS_BIGQUERY_DATASET=aegis_evals,AEGIS_BIGQUERY_TABLE=evaluation_runs"
 
 URL=$(gcloud run services describe "${SERVICE}" --region="${REGION}" --format='value(status.url)')
 echo "==> Deployed: ${URL}"

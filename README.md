@@ -92,14 +92,24 @@ export AEGIS_LOCATION=us-central1
 aegis evaluate --dataset smoke
 ```
 
-Already provisioned (no billing needed to create):
-- APIs: Vertex AI, BigQuery, Logging, Cloud Trace, IAM
+Already provisioned:
+- Project: `aegis-eval-governance-platform`
+- APIs: Vertex AI, BigQuery, Logging, Cloud Trace, IAM, Cloud Run, Artifact Registry, Cloud Build
 - BigQuery dataset/table: `aegis_evals.evaluation_runs`
+- Cloud Run: https://aegis-eval-api-ez74y3doka-uc.a.run.app
+- Model: `gemini-2.5-flash`
 
-Blocked until billing is open:
-- Vertex Gemini inference
-- BigQuery DML / streaming inserts
-- Artifact Registry, Cloud Build, Cloud Run deploy
+```bash
+# Re-run provision / redeploy
+./scripts/setup_gcp.sh
+
+# Point local CLI at GCP
+export AEGIS_MODE=gcp
+export AEGIS_PROJECT_ID=aegis-eval-governance-platform
+export AEGIS_LOCATION=us-central1
+export AEGIS_MODEL=gemini-2.5-flash
+aegis evaluate --dataset smoke
+```
 
 Optional: `pip install -e ".[adk]"` for the Google Agent Development Kit package.
 

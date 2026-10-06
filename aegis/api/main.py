@@ -44,6 +44,7 @@ class ApprovalRequest(BaseModel):
 _RUNS: dict[str, Any] = {}
 
 
+@app.get("/health")
 @app.get("/healthz")
 def healthz() -> dict[str, str]:
     settings = get_settings()
