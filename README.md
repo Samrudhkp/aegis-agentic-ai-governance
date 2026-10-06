@@ -74,17 +74,32 @@ Critical findings (unsafe tool execution, raw PII/secret exposure) always block.
 
 ## GCP mode
 
+Configured for project **`aegis-eval-governance-platform`** (`us-central1`).
+
+**Billing required** for Vertex AI, BigQuery writes, and Cloud Run. Re-open billing, then run:
+
 ```bash
+# 1) Re-open / link billing (browser):
+# https://console.cloud.google.com/billing/enable?project=aegis-eval-governance-platform
+
+# 2) Provision APIs, BigQuery, and (with billing) Cloud Run:
+./scripts/setup_gcp.sh
+
+# 3) Run Aegis against GCP
 export AEGIS_MODE=gcp
-export AEGIS_PROJECT_ID=your-project
+export AEGIS_PROJECT_ID=aegis-eval-governance-platform
 export AEGIS_LOCATION=us-central1
-export AEGIS_MODEL=gemini-2.0-flash
+aegis evaluate --dataset smoke
 ```
 
-- Gemini judge + agent via `google-genai` / Vertex AI (ADK-compatible runner shape)
-- Evaluation rows written to BigQuery (`scripts/bigquery_schema.sql`)
-- Structured logs via Cloud Logging
-- Traces exported with OpenTelemetry Cloud Trace exporter
+Already provisioned (no billing needed to create):
+- APIs: Vertex AI, BigQuery, Logging, Cloud Trace, IAM
+- BigQuery dataset/table: `aegis_evals.evaluation_runs`
+
+Blocked until billing is open:
+- Vertex Gemini inference
+- BigQuery DML / streaming inserts
+- Artifact Registry, Cloud Build, Cloud Run deploy
 
 Optional: `pip install -e ".[adk]"` for the Google Agent Development Kit package.
 
