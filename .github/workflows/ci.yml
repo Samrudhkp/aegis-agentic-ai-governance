@@ -1,0 +1,58 @@
+name: aegis-ci
+
+on:
+  push:
+    branches: [main, "cursor/**"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test-and-gate:
+    runs-on: ubuntu-latest
+    env:
+      AEGIS_MODE: local
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install
+        run: pip install -e ".[dev]"
+
+      - name: Unit & integration tests
+        run: pytest -q --cov=aegis --cov-report=term-missing
+
+      - name: Aegis evaluation gate (blocks deploy on failure)
+        run: |
+          python -m aegis.cicd.gate_check \
+            --dataset smoke \
+            --adversarial \
+            --fail-closed
+
+      - name: Upload gate artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: aegis-gate-artifacts
+          path: |
+            /tmp/aegis/latest_run.json
+            /tmp/aegis/gate_result.json
+            /tmp/aegis/evaluation_runs.jsonl
+          if-no-files-found: warn
+
+  # Placeholder deploy job — only runs when gates pass.
+  # Wire to Cloud Run via Workload Identity in your GCP project.
+  deploy-cloud-run:
+    needs: test-and-gate
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - name: Gate already passed — deploy permitted
+        run: |
+          echo "Quality and safety gates passed."
+          echo "Configure gcloud auth / Workload Identity to deploy:"
+          echo "  gcloud run deploy aegis-eval-api --source . --region us-central1"
